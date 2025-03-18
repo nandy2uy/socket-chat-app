@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Chat</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="chat-container">
+        <header class="chat-header">
+            <h1>Chat App</h1>
+            <div class="user-info">
+                <span class="status-indicator online"></span>
+                <span class="username">You</span>
+            </div>
+        </header>
+        
+        <main class="chat-main">
+            <ul id="messages" class="messages"></ul>
+        </main>
+        
+        <form id="form" class="chat-form">
+            <input id="input" autocomplete="off" placeholder="Type a message..." />
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const messages = document.getElementById('messages');
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+
+        // Generate a random username color
+        const userColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', input.value);
+                
+                // Add sent message to the chat
+                const item = document.createElement('li');
+                item.className = 'message sent';
+                item.innerHTML = `
+                    <div class="message-content">
+                        <p>${input.value}</p>
+                        <span class="timestamp">${new Date().toLocaleTimeString()}</span>
+                    </div>
+                `;
+                messages.appendChild(item);
+                input.value = '';
+                
+                // Scroll to bottom
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        });
+
+        socket.on('chat message', function(msg) {
+            // Only display received messages (not our own)
+            if (!document.querySelector(`.message.sent p:contains('${msg}')`)) {
+                const item = document.createElement('li');
+                item.className = 'message received';
+                item.innerHTML = `
+                    <div class="avatar" style="background-color: ${userColor}">
+                        <span>${msg.charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div class="message-content">
+                        <p>${msg}</p>
+                        <span class="timestamp">${new Date().toLocaleTimeString()}</span>
+                    </div>
+                `;
+                messages.appendChild(item);
+                
+                // Scroll to bottom
+                window.scrollTo(0, document.body.scrollHeight);
+            }
+        });
+    </script>
+</body>
+</html>
